@@ -3,10 +3,15 @@ import { advocates } from "../../../db/schema";
 import { advocateData } from "../../../db/seed/advocates";
 
 export async function GET() {
-  // Uncomment this line to use a database
-  // const data = await db.select().from(advocates);
+  try {
+    // Uncomment this line to use a database
+    // const data = await db.select().from(advocates);
 
-  const data = advocateData;
+    const data = advocateData;
 
-  return Response.json({ data });
+    if (data?.length === 0) return Response.json({ data: [] });
+    return Response.json({ data });
+  } catch (error) {
+    return Response.error();
+  }
 }
