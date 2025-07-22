@@ -28,8 +28,8 @@ export default function Home() {
         advocate.lastName.includes(searchTerm) ||
         advocate.city.includes(searchTerm) ||
         advocate.degree.includes(searchTerm) ||
-        advocate.specialties.includes(searchTerm) ||
-        advocate.yearsOfExperience.includes(searchTerm)
+        advocate.specialties.some((specialty: string) => specialty.includes(searchTerm)) ||
+        `${advocate.yearsOfExperience}`.includes(searchTerm)
       );
     });
 
@@ -77,8 +77,8 @@ export default function Home() {
                 <td>{advocate.city}</td>
                 <td>{advocate.degree}</td>
                 <td>
-                  {advocate.specialties.map((s) => (
-                    <div>{s}</div>
+                  {advocate.specialties.map((s: string, sIdx: number) => (
+                    <div key={sIdx}>{s}</div>
                   ))}
                 </td>
                 <td>{advocate.yearsOfExperience}</td>
