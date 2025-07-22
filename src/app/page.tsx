@@ -1,24 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { AdvocateTable } from "./components/advocate-table";
+import { Input } from "antd";
+import { SearchProps } from "antd/es/input/Search";
+import { useQuery } from "@tanstack/react-query";
+
+const { Search } = Input;
+
+export interface Advocate {
+  id: number;
+  firstName: string;
+  lastName: string;
+  city: string;
+  degree: string;
+  specialties: string[];
+  yearsOfExperience: number;
+  phoneNumber: number;
+}
 
 export default function Home() {
-  const [advocates, setAdvocates] = useState([]);
-  const [filteredAdvocates, setFilteredAdvocates] = useState([]);
+  const [filteredAdvocates, setFilteredAdvocates] = useState<Advocate[] | []>(
+    []
+  );
   const [searchTerm, setSearchTerm] = useState("");
 
-  useEffect(() => {
-    console.log("fetching advocates...");
-    fetch("/api/advocates").then((response) => {
-      response.json().then((jsonResponse) => {
-        setAdvocates(jsonResponse.data);
-        setFilteredAdvocates(jsonResponse.data);
-      });
-    });
-  }, []);
+  const { data, isError, isLoading } = useQuery({
+    queryKey: ["advocates"],
+    queryFn: async () => {
+      const response = await fetch("/api/advocates");
+      const jsonResponse = await response.json();
+      return jsonResponse.data;
+    },
+  });
 
   useEffect(() => {
-    const filteredAdvocates = advocates.filter((advocate) => {
+    if (data) {
+      setFilteredAdvocates(data);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    const filteredAdvocates = data?.filter((advocate: Advocate) => {
       return (
         advocate.firstName.includes(searchTerm) ||
         advocate.lastName.includes(searchTerm) ||
@@ -36,59 +59,33 @@ export default function Home() {
 
   const handleReset = () => {
     setSearchTerm("");
-    console.log(advocates);
-    setFilteredAdvocates(advocates);
+    setFilteredAdvocates(data);
+  };
+
+  const onSearch: SearchProps["onSearch"] = (value: string) => {
+    setSearchTerm(value);
   };
 
   return (
     <main style={{ margin: "24px" }}>
       <h1>Solace Advocates</h1>
       <br />
-      <br />
       <div>
-        <p>Search</p>
-        <p>Searching for: {searchTerm}</p>
-        <input
-          style={{ border: "1px solid black" }}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          value={searchTerm}
+        <Search
+          placeholder="Search advocates (eg: Smith or Houston)"
+          allowClear
+          onSearch={onSearch}
+          onClear={handleReset}
+          style={{ width: "40%" }}
         />
-        <button onClick={handleReset}>Reset Search</button>
       </div>
-      <br />
-      <br />
-      <table>
-        <thead>
-          <tr>
-            <th>First Name</th>
-            <th>Last Name</th>
-            <th>City</th>
-            <th>Degree</th>
-            <th>Specialties</th>
-            <th>Years of Experience</th>
-            <th>Phone Number</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredAdvocates.map((advocate, index) => {
-            return (
-              <tr key={`${advocate?.firstName}-${index}`}>
-                <td>{advocate.firstName}</td>
-                <td>{advocate.lastName}</td>
-                <td>{advocate.city}</td>
-                <td>{advocate.degree}</td>
-                <td>
-                  {advocate.specialties.map((s: string, sIdx: number) => (
-                    <div key={sIdx}>{s}</div>
-                  ))}
-                </td>
-                <td>{advocate.yearsOfExperience}</td>
-                <td>{advocate.phoneNumber}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {isError ? (
+        <div style={{ color: "red", marginTop: "16px" }}>
+          Error fetching advocates data. Please try again later.
+        </div>
+      ) : (
+        <AdvocateTable advocates={filteredAdvocates} loading={isLoading} />
+      )}
     </main>
   );
 }
